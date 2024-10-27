@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-Car::Car(float startX, float startY)
-    : x_(startX), y_(startY), velocity_(0), angle_(0), acceleration_(0) {}
+Car::Car(Position startPosition)
+    : position_{startPosition}, velocity_(0), angle_(0), acceleration_(0) {}
 
 void Car::HandleInput(const Uint8 *keyState) {
   acceleration_ = 0;
@@ -35,8 +35,8 @@ void Car::Update(float deltaTime) {
   if (velocity_ < -MAX_VELOCITY / 2)
     velocity_ = -MAX_VELOCITY / 2;
 
-  x_ += std::cos(angle_) * velocity_ * deltaTime;
-  y_ += std::sin(angle_) * velocity_ * deltaTime;
+  position_.x += std::cos(angle_) * velocity_ * deltaTime;
+  position_.y += std::sin(angle_) * velocity_ * deltaTime;
 }
 
 void Car::Render(SDL_Renderer *renderer) const {
@@ -44,12 +44,12 @@ void Car::Render(SDL_Renderer *renderer) const {
 
   const int size = 20;
   SDL_Point points[3] = {
-      {static_cast<int>(x_ + std::cos(angle_) * size),
-       static_cast<int>(y_ + std::sin(angle_) * size)},
-      {static_cast<int>(x_ + std::cos(angle_ + 2.5) * size / 2),
-       static_cast<int>(y_ + std::sin(angle_ + 2.5) * size / 2)},
-      {static_cast<int>(x_ + std::cos(angle_ - 2.5) * size / 2),
-       static_cast<int>(y_ + std::sin(angle_ - 2.5) * size / 2)}};
+      {static_cast<int>(position_.x + std::cos(angle_) * size),
+       static_cast<int>(position_.y + std::sin(angle_) * size)},
+      {static_cast<int>(position_.x + std::cos(angle_ + 2.5) * size / 2),
+       static_cast<int>(position_.y + std::sin(angle_ + 2.5) * size / 2)},
+      {static_cast<int>(position_.x + std::cos(angle_ - 2.5) * size / 2),
+       static_cast<int>(position_.y + std::sin(angle_ - 2.5) * size / 2)}};
 
   SDL_RenderDrawLines(renderer, points, 3);
   SDL_RenderDrawLine(renderer, points[2].x, points[2].y, points[0].x,

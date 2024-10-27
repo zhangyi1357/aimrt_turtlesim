@@ -25,7 +25,7 @@ bool Game::Initialize() {
     return false;
   }
 
-  car_ = std::make_unique<Car>(400, 300);
+  car_ = std::make_unique<Car>(Position{400, 300});
   isRunning_ = true;
   lastFrame_ = SDL_GetTicks();
 

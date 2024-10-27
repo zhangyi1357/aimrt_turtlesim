@@ -2,15 +2,20 @@
 
 #include <SDL.h>
 
+struct Position {
+  float x;
+  float y;
+};
+
 class Car {
 public:
-  Car(float startX, float startY);
+  explicit Car(Position startPosition);
   void HandleInput(const Uint8 *keyState);
   void Update(float deltaTime);
   void Render(SDL_Renderer *renderer) const;
 
 private:
-  float x_, y_;        // 位置
+  Position position_;  // 位置
   float velocity_;     // 速度
   float angle_;        // 角度（弧度）
   float acceleration_; // 加速度
