@@ -18,11 +18,12 @@ void Car::HandleInput(const Uint8 *keyState) {
 
   float turnFactor = std::abs(velocity_) / MAX_VELOCITY;
   if (std::abs(velocity_) > MIN_TURN_VELOCITY) {
+    float turnAmount = TURN_SPEED * turnFactor * (velocity_ > 0 ? 1.0F : -0.5F);
     if (keyState[SDL_SCANCODE_LEFT]) {
-      angle_ -= TURN_SPEED * turnFactor * (velocity_ > 0 ? 1.0F : -0.5F);
+      angle_ -= turnAmount;
     }
     if (keyState[SDL_SCANCODE_RIGHT]) {
-      angle_ += TURN_SPEED * turnFactor * (velocity_ > 0 ? 1.0F : -0.5F);
+      angle_ += turnAmount;
     }
   }
 }
