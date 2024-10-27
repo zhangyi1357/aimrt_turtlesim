@@ -1,5 +1,6 @@
 #include "car.h"
 
+#include <algorithm>
 #include <cmath>
 
 Car::Car(Position startPosition)
@@ -30,10 +31,7 @@ void Car::Update(float deltaTime) {
   velocity_ += acceleration_ * deltaTime;
   velocity_ *= FRICTION;
 
-  if (velocity_ > MAX_VELOCITY)
-    velocity_ = MAX_VELOCITY;
-  if (velocity_ < -MAX_VELOCITY / 2)
-    velocity_ = -MAX_VELOCITY / 2;
+  velocity_ = std::clamp(velocity_, -MAX_VELOCITY / 2, MAX_VELOCITY);
 
   position_.x += std::cos(angle_) * velocity_ * deltaTime;
   position_.y += std::sin(angle_) * velocity_ * deltaTime;
@@ -42,14 +40,23 @@ void Car::Update(float deltaTime) {
 void Car::Render(SDL_Renderer *renderer) const {
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-  const int size = 20;
-  SDL_Point points[3] = {
-      {static_cast<int>(position_.x + std::cos(angle_) * size),
-       static_cast<int>(position_.y + std::sin(angle_) * size)},
-      {static_cast<int>(position_.x + std::cos(angle_ + 2.5) * size / 2),
-       static_cast<int>(position_.y + std::sin(angle_ + 2.5) * size / 2)},
-      {static_cast<int>(position_.x + std::cos(angle_ - 2.5) * size / 2),
-       static_cast<int>(position_.y + std::sin(angle_ - 2.5) * size / 2)}};
+  const float size = 20.0F;
+  SDL_Point points[3] = {};
+  const float angles[3] = {
+      angle_,        // front vertex
+      angle_ + 2.5F, // back right vertex
+      angle_ - 2.5F  // back left vertex
+  };
+  const float sizes[3] = {
+      size,     // front vertex distance
+      size / 2, // back vertices distance
+      size / 2  // back vertices distance
+  };
+  for (int i = 0; i < 3; ++i) {
+    points[i] = {
+        static_cast<int>(position_.x + std::cos(angles[i]) * sizes[i]),
+        static_cast<int>(position_.y + std::sin(angles[i]) * sizes[i])};
+  }
 
   SDL_RenderDrawLines(renderer, points, 3);
   SDL_RenderDrawLine(renderer, points[2].x, points[2].y, points[0].x,
