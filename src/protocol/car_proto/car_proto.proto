@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package aimrt_turtlesim.car_proto;
+
+message KeyboardEvent {
+    bool up = 1;
+    bool down = 2;
+    bool left = 3;
+    bool right = 4;
+}
+
+message Position {
+    int64 x = 1;
+    int64 y = 2;
+    double theta = 3;
+}

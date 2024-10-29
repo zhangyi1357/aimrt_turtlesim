@@ -6,19 +6,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(FetchContent)
-FetchContent_Declare(
-    SDL2
-    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-    GIT_TAG release-2.30.8
-)
-FetchContent_MakeAvailable(SDL2)
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
-add_executable(racing_game
-    src/main.cpp
-    src/game.cpp
-    src/car.cpp
-)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
-target_link_libraries(racing_game PRIVATE SDL2::SDL2)
+
+include(GetSdl2)
+include(GetAimRT)
+
+add_subdirectory(src)
