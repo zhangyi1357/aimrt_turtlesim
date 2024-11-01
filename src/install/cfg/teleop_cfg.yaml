@@ -7,7 +7,7 @@ aimrt:
           thread_num: 1
           http_options:
             listen_ip: 127.0.0.1
-            listen_port: 50080
+            listen_port: 50081
   log:
     core_lvl: INFO
     backends:
@@ -25,9 +25,13 @@ aimrt:
   channel:
     backends:
       - type: http
+        options:
+          pub_topics_options:
+            - topic_name: "(.*)"
+              server_url_list: ["127.0.0.1:50080"]
     pub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [local, http]
+        enable_backends: [http]
   module:
     pkgs:
       - path: ./libpkg_all.so
