@@ -30,7 +30,7 @@ bool TeleopModule::Start() {
   return true;
 }
 
-void TeleopModule::Shutdown() {}
+void TeleopModule::Shutdown() { run_flag_ = false; }
 
 void TeleopModule::MainLoop() {
   try {
