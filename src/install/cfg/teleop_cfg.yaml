@@ -20,7 +20,9 @@ aimrt:
           max_file_num: 10
   executor:
     executors:
-      - name: teleop_pub_thread
+      - name: teleop_publish_thread
+        type: asio_thread
+      - name: teleop_keyboard_thread
         type: simple_thread
   channel:
     backends:

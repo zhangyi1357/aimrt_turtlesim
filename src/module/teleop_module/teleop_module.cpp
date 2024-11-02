@@ -1,14 +1,11 @@
 #include "teleop_module/teleop_module.h"
 
+#include <SDL2/SDL.h>
+#include <aimrt_module_cpp_interface/channel/channel_handle.h>
 #include <aimrt_module_protobuf_interface/channel/protobuf_channel.h>
-#include <ncurses.h>
-#include <sys/types.h>
-#include <termios.h>
-#include <unistd.h>
 #include <util/log_util.h>
 
 #include "car_proto.pb.h"  // IWYU pragma: keep
-#include "channel/channel_handle.h"
 
 namespace aimrt_turtlesim::teleop_module {
 
@@ -19,84 +16,92 @@ bool TeleopModule::Initialize(aimrt::CoreRef core) {
   publisher_ = core_.GetChannelHandle().GetPublisher(topic_name);
   AIMRT_CHECK_ERROR_THROW(publisher_, "GetPublisher for topic {} failed", topic_name);
 
-  bool ret = aimrt::channel::RegisterPublishType<aimrt_turtlesim::car_proto::KeyboardEvent>(publisher_);
+  bool ret = aimrt::channel::RegisterPublishType<KeyboardEvent>(publisher_);
   AIMRT_CHECK_ERROR_THROW(ret, "RegisterPublishType for KeyboardEvent failed");
 
-  enableRawMode();
-
-  return true;
+  return InitSDL();
 }
 
 bool TeleopModule::Start() {
-  auto pub_executor = core_.GetExecutorManager().GetExecutor("teleop_pub_thread");
-  AIMRT_CHECK_ERROR_THROW(pub_executor, "GetExecutor teleop_pub_thread failed");
+  auto publish_executor = core_.GetExecutorManager().GetExecutor("teleop_publish_thread");
+  AIMRT_CHECK_ERROR_THROW(publish_executor, "GetExecutor teleop_publish_thread failed");
 
-  pub_executor.Execute([this]() { MainLoop(); });
+  timer_ = aimrt::executor::CreateTimer(publish_executor, std::chrono::milliseconds(100), [this]() {
+    aimrt::channel::PublisherProxy<KeyboardEvent> proxy(publisher_);
+    proxy.Publish(keyboard_event_);
+    keyboard_event_.Clear();
+  });
+
+  auto keyboard_executor = core_.GetExecutorManager().GetExecutor("teleop_keyboard_thread");
+  AIMRT_CHECK_ERROR_THROW(keyboard_executor, "GetExecutor teleop_keyboard_thread failed");
+
+  keyboard_executor.Execute([this]() { MainLoop(); });
 
   return true;
 }
 
 void TeleopModule::Shutdown() {
   run_flag_ = false;
-  disableRawMode();
+
+  if (timer_) {
+    timer_->Cancel();
+    timer_->SyncWait();
+  }
 }
 
 void TeleopModule::MainLoop() {
   try {
-    aimrt::channel::PublisherProxy<aimrt_turtlesim::car_proto::KeyboardEvent> proxy(publisher_);
-
     while (run_flag_) {
-      aimrt_turtlesim::car_proto::KeyboardEvent event;
-      ProcessKeyboardEvents(event);
-      proxy.Publish(event);
+      ListenKeyboardEvents(keyboard_event_);
+      SDL_SetRenderDrawColor(renderer_.get(), 0, 0, 0, 255);
+      SDL_RenderClear(renderer_.get());
+      SDL_RenderPresent(renderer_.get());
     }
   } catch (const std::exception& e) {
     AIMRT_ERROR("MainLoop error: {}", e.what());
   }
 }
 
-void TeleopModule::ProcessKeyboardEvents(aimrt_turtlesim::car_proto::KeyboardEvent& event) {
-  fd_set rfds;
-  struct timeval tv;
-
-  FD_ZERO(&rfds);
-  FD_SET(STDIN_FILENO, &rfds);
-
-  // 设置超时时间为 10 ms
-  tv.tv_sec = 0;
-  tv.tv_usec = KEYBOARD_TIMEOUT_MS * 1000;
-
-  // 使用select进行非阻塞读取
-  int retval = select(STDIN_FILENO + 1, &rfds, nullptr, nullptr, &tv);
-
-  if (retval > 0) {
-    char c;
-    if (read(STDIN_FILENO, &c, 1) == 1) {
-      switch (c) {
-        case 'w':
-          event.set_up(true);
-          break;
-        case 's':
-          event.set_down(true);
-          break;
-        case 'a':
-          event.set_left(true);
-          break;
-        case 'd':
-          event.set_right(true);
-          break;
-      }
+void TeleopModule::ListenKeyboardEvents(KeyboardEvent& event) {
+  SDL_Event sdl_event;
+  while (SDL_PollEvent(&sdl_event)) {
+    const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+    if (keyState[SDL_SCANCODE_UP]) {
+      event.set_up(true);
+    }
+    if (keyState[SDL_SCANCODE_DOWN]) {
+      event.set_down(true);
+    }
+    if (keyState[SDL_SCANCODE_LEFT]) {
+      event.set_left(true);
+    }
+    if (keyState[SDL_SCANCODE_RIGHT]) {
+      event.set_right(true);
     }
   }
 }
 
-void TeleopModule::enableRawMode() {
-  tcgetattr(STDIN_FILENO, &orig_termios_);
-  struct termios raw = orig_termios_;
-  raw.c_lflag &= ~(ECHO | ICANON);
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-}
+bool TeleopModule::InitSDL() {
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    AIMRT_ERROR("SDL init failed: {}", SDL_GetError());
+    return false;
+  }
 
-void TeleopModule::disableRawMode() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios_); }
+  window_.reset(SDL_CreateWindow("Teleop", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600,
+                                 SDL_WINDOW_SHOWN));
+  if (!window_) {
+    AIMRT_ERROR("SDL window create failed: {}", SDL_GetError());
+    return false;
+  }
+
+  renderer_.reset(
+      SDL_CreateRenderer(window_.get(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
+  if (!renderer_) {
+    AIMRT_ERROR("SDL renderer create failed: {}", SDL_GetError());
+    return false;
+  }
+
+  return true;
+}
 
 }  // namespace aimrt_turtlesim::teleop_module

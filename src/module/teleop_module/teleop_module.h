@@ -1,19 +1,20 @@
 #pragma once
 
+#include <SDL2/SDL.h>
+#include <aimrt_module_cpp_interface/executor/timer.h>
 #include <aimrt_module_cpp_interface/module_base.h>
-#include <termios.h>
-
-#include <array>
-#include <cstdint>
-#include <future>
 
 #include "car_proto.pb.h"  // IWYU pragma: keep
 
 namespace aimrt_turtlesim::teleop_module {
 
+using KeyboardEvent = aimrt_turtlesim::car_proto::KeyboardEvent;
+
 class TeleopModule : public aimrt::ModuleBase {
  public:
-  [[nodiscard]] aimrt::ModuleInfo Info() const override { return aimrt::ModuleInfo{.name = "TeleopModule"}; }
+  [[nodiscard]] aimrt::ModuleInfo Info() const override {
+    return aimrt::ModuleInfo{.name = "TeleopModule"};
+  }
 
   bool Initialize(aimrt::CoreRef core) override;
   bool Start() override;
@@ -21,25 +22,24 @@ class TeleopModule : public aimrt::ModuleBase {
 
  private:
   auto GetLogger() { return core_.GetLogger(); }
+
   void MainLoop();
-  void ProcessKeyboardEvents(aimrt_turtlesim::car_proto::KeyboardEvent& event);
-  void enableRawMode();
-  void disableRawMode();
-  bool isKeyPressed(char key);
+  void ListenKeyboardEvents(KeyboardEvent& event);
+
+  bool InitSDL();
 
  private:
   aimrt::CoreRef core_;
   aimrt::channel::PublisherRef publisher_;
+  std::shared_ptr<aimrt::executor::TimerBase> timer_;
+
+  KeyboardEvent keyboard_event_;
 
   bool run_flag_ = true;
-  std::promise<void> shutdown_promise_;
 
-  std::array<bool, 128> key_states_{false};
-
-  struct termios orig_termios_;
-  int keyboard_fd_;
-
-  static constexpr int64_t KEYBOARD_TIMEOUT_MS = 100;
+  std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window_{nullptr, SDL_DestroyWindow};
+  std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer_{nullptr,
+                                                                          SDL_DestroyRenderer};
 };
 
 }  // namespace aimrt_turtlesim::teleop_module

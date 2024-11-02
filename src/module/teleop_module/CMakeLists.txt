@@ -22,6 +22,7 @@ target_include_directories(${CUR_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 
 target_link_libraries(
   ${CUR_TARGET_NAME}
+  PRIVATE SDL2::SDL2
   PUBLIC aimrt::interface::aimrt_module_cpp_interface
          aimrt::interface::aimrt_module_protobuf_interface
          aimrt_turtlesim::car_proto_pb_gencode)
