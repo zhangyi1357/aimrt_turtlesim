@@ -1,4 +1,4 @@
 # clang format file with google style and linewidth 120
 
 BasedOnStyle: Google
-ColumnLimit: 120
+ColumnLimit: 100
