@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./install/bin/aimrt_main --cfg_file_path=./cfg/teleop_cfg.yaml
+./aimrt_main --cfg_file_path=./cfg/teleop_cfg.yaml
