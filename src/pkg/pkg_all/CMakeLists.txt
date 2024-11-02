@@ -27,12 +27,5 @@ target_link_libraries(
           ${CUR_SUPERIOR_NAMESPACE}::simulation_module
           ${CUR_SUPERIOR_NAMESPACE}::car_module)
 
-# Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  LIBRARY DESTINATION bin)
-
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})

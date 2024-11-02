@@ -7,7 +7,7 @@ aimrt:
           thread_num: 1
           http_options:
             listen_ip: 127.0.0.1
-            listen_port: 50081
+            listen_port: 50080
   log:
     core_lvl: Info
     backends:
@@ -15,28 +15,24 @@ aimrt:
       - type: rotate_file
         options:
           path: ./log
-          filename: teleop.log
+          filename: car.log
           max_file_size_m: 4
           max_file_num: 10
   executor:
     executors:
-      - name: teleop_pub_thread
+      - name: car_pub_thread
         type: simple_thread
   channel:
     backends:
       - type: http
-        options:
-          pub_topics_options:
-            - topic_name: "(.*)"
-              server_url_list: ["127.0.0.1:50080"]
-    pub_topics_options:
+    sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [http]
   module:
     pkgs:
       - path: ./libpkg_all.so
         enable_modules:
-          - TeleopModule
+          - CarModule
     modules:
-      - name: TeleopModule
+      - name: CarModule
         log_lvl: INFO
